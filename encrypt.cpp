@@ -1,12 +1,10 @@
 #include <iostream>
 #include <fstream>
 #include <cstring>
-#include <iomanip>
 #include "structures.h"
 
 using namespace std;
 
-// Hàm nhân Galois
 unsigned char gmul(unsigned char a, unsigned char b) {
     unsigned char p = 0;
     for (int i = 0; i < 8; i++) {
@@ -51,17 +49,14 @@ void MixColumns(unsigned char* state) {
 
 void KeyExpansion(unsigned char* key, unsigned char* expandedKey) {
     memcpy(expandedKey, key, 16);
-    int bytesGenerated = 16;
-    int rconPtr = 1;
+    int bytesGenerated = 16, rconPtr = 1;
     unsigned char temp[4];
     while (bytesGenerated < 176) {
         memcpy(temp, expandedKey + bytesGenerated - 4, 4);
         if (bytesGenerated % 16 == 0) {
             unsigned char t = temp[0];
             temp[0] = s[temp[1]] ^ Rcon[rconPtr++];
-            temp[1] = s[temp[2]];
-            temp[2] = s[temp[3]];
-            temp[3] = s[t];
+            temp[1] = s[temp[2]]; temp[2] = s[temp[3]]; temp[3] = s[t];
         }
         for (int i = 0; i < 4; i++) {
             expandedKey[bytesGenerated] = expandedKey[bytesGenerated - 16] ^ temp[i];
@@ -70,22 +65,9 @@ void KeyExpansion(unsigned char* key, unsigned char* expandedKey) {
     }
 }
 
-void AES_encrypt(unsigned char* state, unsigned char* expandedKey) {
-    AddRoundKey(state, expandedKey);
-    for (int r = 1; r <= 9; r++) {
-        SubBytes(state);
-        ShiftRows(state);
-        MixColumns(state);
-        AddRoundKey(state, expandedKey + (r * 16));
-    }
-    SubBytes(state);
-    ShiftRows(state);
-    AddRoundKey(state, expandedKey + 160);
-}
-
 int main() {
-    unsigned char key[16] = {0}, expandedKey[176] = {0};
-    char msg_in[17] = {0};
+    unsigned char key[16] = {0}, expandedKey[176] = {0}, state[16] = {0};
+    char message[17] = {0};
 
     ifstream kf("keyfile");
     int val;
@@ -93,18 +75,19 @@ int main() {
     kf.close();
 
     KeyExpansion(key, expandedKey);
-    cout << "Enter 16-char message: ";
-    cin.getline(msg_in, 17);
+    cin.read(message, 16);
+    memcpy(state, message, 16);
 
-    unsigned char state[16] = {0};
-    memcpy(state, msg_in, 16);
-
-    AES_encrypt(state, expandedKey);
+    AddRoundKey(state, expandedKey);
+    for (int r = 1; r <= 9; r++) {
+        SubBytes(state); ShiftRows(state); MixColumns(state);
+        AddRoundKey(state, expandedKey + (r * 16));
+    }
+    SubBytes(state); ShiftRows(state);
+    AddRoundKey(state, expandedKey + 160);
 
     ofstream out("message.aes", ios::binary);
     out.write((char*)state, 16);
     out.close();
-
-    cout << "Encryption successful." << endl;
     return 0;
 }

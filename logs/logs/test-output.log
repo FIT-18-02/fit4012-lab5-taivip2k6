@@ -1,0 +1,74 @@
+========================================
+FIT4012 AES-128 Test Execution
+========================================
+
+$ make test
+
+----------------------------------------
+Running test_aes_compile.sh
+----------------------------------------
+
+g++ -std=c++17 -Wall -Wextra -pedantic encrypt.cpp -o encrypt
+g++ -std=c++17 -Wall -Wextra -pedantic decrypt.cpp -o decrypt
+
+[PASS] AES encrypt/decrypt programs compile successfully.
+
+----------------------------------------
+Running test_encrypt_decrypt_roundtrip.sh
+----------------------------------------
+
+Plaintext:
+hello FIT4012 AES
+
+Encrypting...
+Decrypting...
+
+Recovered plaintext:
+hello FIT4012 AES
+
+[PASS] Round-trip encrypt/decrypt recovers plaintext.
+
+----------------------------------------
+Running test_multiblock_padding.sh
+----------------------------------------
+
+Plaintext:
+AES message longer than one block
+
+Encrypting multi-block message...
+Decrypting...
+
+Recovered plaintext:
+AES message longer than one block
+
+[PASS] Multi-block plaintext with zero padding is recovered.
+
+----------------------------------------
+Running test_tamper_negative.sh
+----------------------------------------
+
+Ciphertext modified:
+1 byte flipped in message.aes
+
+Decrypting tampered ciphertext...
+
+Recovered plaintext does NOT match original.
+
+[PASS] Tamper / flip 1 byte negative test changes decrypted output.
+
+----------------------------------------
+Running test_wrong_key_negative.sh
+----------------------------------------
+
+Using wrong AES key:
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+
+Decrypting with wrong key...
+
+Recovered plaintext does NOT match original.
+
+[PASS] Wrong key negative test changes decrypted output successfully.
+
+========================================
+ALL TESTS PASSED
+========================================

@@ -5,7 +5,6 @@
 
 using namespace std;
 
-// Hàm nhân Galois cho MixColumns đảo
 unsigned char gmul(unsigned char a, unsigned char b) {
     unsigned char p = 0;
     for (int i = 0; i < 8; i++) {
@@ -22,12 +21,10 @@ void AddRoundKey(unsigned char* state, unsigned char* roundKey) {
     for (int i = 0; i < 16; i++) state[i] ^= roundKey[i];
 }
 
-// 1. SubBytes đảo
 void InvSubBytes(unsigned char* state) {
     for (int i = 0; i < 16; i++) state[i] = rsbox[state[i]];
 }
 
-// 2. ShiftRows đảo
 void InvShiftRows(unsigned char* state) {
     unsigned char tmp[16];
     tmp[0] = state[0]; tmp[4] = state[4]; tmp[8] = state[8]; tmp[12] = state[12];
@@ -37,7 +34,6 @@ void InvShiftRows(unsigned char* state) {
     memcpy(state, tmp, 16);
 }
 
-// 3. MixColumns đảo
 void InvMixColumns(unsigned char* state) {
     unsigned char tmp[16];
     for (int i = 0; i < 4; i++) {
@@ -51,20 +47,16 @@ void InvMixColumns(unsigned char* state) {
     memcpy(state, tmp, 16);
 }
 
-// 4. Key Expansion (Giống encrypt)
 void KeyExpansion(unsigned char* key, unsigned char* expandedKey) {
     memcpy(expandedKey, key, 16);
-    int bytesGenerated = 16;
-    int rconPtr = 1;
+    int bytesGenerated = 16, rconPtr = 1;
     unsigned char temp[4];
     while (bytesGenerated < 176) {
         memcpy(temp, expandedKey + bytesGenerated - 4, 4);
         if (bytesGenerated % 16 == 0) {
             unsigned char t = temp[0];
             temp[0] = s[temp[1]] ^ Rcon[rconPtr++];
-            temp[1] = s[temp[2]];
-            temp[2] = s[temp[3]];
-            temp[3] = s[t];
+            temp[1] = s[temp[2]]; temp[2] = s[temp[3]]; temp[3] = s[t];
         }
         for (int i = 0; i < 4; i++) {
             expandedKey[bytesGenerated] = expandedKey[bytesGenerated - 16] ^ temp[i];
@@ -74,7 +66,7 @@ void KeyExpansion(unsigned char* key, unsigned char* expandedKey) {
 }
 
 void AES_decrypt(unsigned char* state, unsigned char* expandedKey) {
-    AddRoundKey(state, expandedKey + 160); // Round cuối trước
+    AddRoundKey(state, expandedKey + 160);
     for (int r = 9; r >= 1; r--) {
         InvShiftRows(state);
         InvSubBytes(state);
@@ -88,14 +80,11 @@ void AES_decrypt(unsigned char* state, unsigned char* expandedKey) {
 
 int main() {
     unsigned char key[16] = {0}, expandedKey[176] = {0}, state[16] = {0};
-
-    // Đọc key
     ifstream kf("keyfile");
     int val;
     for (int i = 0; i < 16 && (kf >> hex >> val); i++) key[i] = (unsigned char)val;
     kf.close();
 
-    // Đọc file đã mã hóa
     ifstream in("message.aes", ios::binary);
     in.read((char*)state, 16);
     in.close();
@@ -103,11 +92,8 @@ int main() {
     KeyExpansion(key, expandedKey);
     AES_decrypt(state, expandedKey);
 
-    // Xuất kết quả ra màn hình để test script đọc được
-    for (int i = 0; i < 16; i++) {
-        if (state[i] != 0) cout << (char)state[i];
-    }
-    cout << endl;
-
+    // Dòng quan trọng: In đúng 16 byte ra stdout để script so sánh 'diff'
+    cout.write((char*)state, 16);
+    
     return 0;
 }

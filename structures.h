@@ -109,9 +109,29 @@ void KeyExpansion(unsigned char inputKey[16], unsigned char expandedKeys[176])
         }
     }
 }
-// Thêm vào cuối file structures.h
+// Thay thế hàm AES_decrypt cũ bằng bản đầy đủ này
 void AES_decrypt(unsigned char state[4][4], unsigned char key[16]) {
-    // Nếu bạn đã có logic giải mã rồi thì đưa vào đây.
-    // Nếu chưa có, tạm thời để trống để vượt qua lỗi biên dịch (Build programs).
+    unsigned char roundKeys[176];
+    
+    // 1. Tạo các khóa vòng từ Cipher Key gốc
+    // Giả sử bạn đã có hàm KeyExpansion trong structures.h
+    KeyExpansion(key, roundKeys);
+
+    // 2. AddRoundKey với khóa vòng cuối cùng (Round 10)
+    AddRoundKey(state, roundKeys + 160);
+
+    // 3. Thực hiện 9 vòng lặp ngược (từ Round 9 về 1)
+    for (int round = 9; round >= 1; round--) {
+        InvShiftRows(state);    // Nghịch đảo của ShiftRows
+        InvSubBytes(state);     // Nghịch đảo của SubBytes
+        AddRoundKey(state, roundKeys + round * 16);
+        InvMixColumns(state);   // Nghịch đảo của MixColumns
+    }
+
+    // 4. Vòng cuối cùng (Round 0) - Không có InvMixColumns
+    InvShiftRows(state);
+    InvSubBytes(state);
+    AddRoundKey(state, roundKeys);
+}
 }
 #endif /* STRUCTURES_H */

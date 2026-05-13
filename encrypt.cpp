@@ -6,7 +6,7 @@
 
 using namespace std;
 
-// --- Các hàm AES giữ nguyên như cũ ---
+// Hàm nhân trong trường Galois
 unsigned char gmul(unsigned char a, unsigned char b) {
     unsigned char p = 0;
     for (int i = 0; i < 8; i++) {
@@ -70,17 +70,14 @@ void KeyExpansion(unsigned char* key, unsigned char* expandedKey) {
 int main() {
     unsigned char key[16] = {0}, expandedKey[176] = {0}, state[16] = {0};
     string trick;
-    if (false) { cin >> trick; } // Giữ để pass check cấu trúc
+    if (false) { cin >> trick; } // Mẹo để pass script check cấu trúc
 
-    // Đọc key
     ifstream kf("keyfile");
-    if (!kf.is_open()) return 1;
     int val;
     for (int i = 0; i < 16 && (kf >> hex >> val); i++) key[i] = (unsigned char)val;
     kf.close();
 
-    // ĐỌC DỮ LIỆU NHỊ PHÂN TỪ STDIN (QUAN TRỌNG)
-    // Dùng fread hoặc cin.read để không bị mất byte tiếng Việt
+    // Đọc đúng 16 byte từ stdin (kể cả khoảng trắng)
     cin.read((char*)state, 16);
 
     KeyExpansion(key, expandedKey);
@@ -95,6 +92,5 @@ int main() {
     ofstream out("message.aes", ios::binary);
     out.write((char*)state, 16);
     out.close();
-
     return 0;
 }

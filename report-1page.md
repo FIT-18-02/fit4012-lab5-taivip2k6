@@ -35,3 +35,10 @@ Ví dụ plaintext:
 
 ```text
 hello FIT4012 AES
+## Conclusion
+
+Bài lab giúp sinh viên hiểu quy trình mã hóa và giải mã AES-128, bao gồm key expansion, encryption rounds, decryption rounds và xử lý block 128-bit. 
+
+Chương trình có thể mã hóa và giải mã plaintext thành công với các test cơ bản như round-trip, multi-block, wrong key và tamper negative test.
+
+Hạn chế hiện tại là cách xử lý padding và file binary còn đơn giản. Trong tương lai có thể cải tiến bằng PKCS#7 padding, xử lý binary an toàn hơn và bổ sung AES standard test vectors.

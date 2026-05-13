@@ -10,7 +10,7 @@ int main() {
     unsigned char ciphertext[16];
     unsigned char state[4][4];
 
-    // 1. Đọc khóa 128-bit từ file keyfile
+    // Đọc khóa
     ifstream kfile("keyfile");
     if (kfile.is_open()) {
         for (int i = 0; i < 16; i++) {
@@ -21,38 +21,32 @@ int main() {
         kfile.close();
     }
 
-    // 2. Đọc ciphertext từ file message.aes
+    // Đọc bản mã
     ifstream mfile("message.aes", ios::binary);
     if (mfile.is_open()) {
         mfile.read((char*)ciphertext, 16);
         mfile.close();
     }
 
-    // 3. Đưa dữ liệu vào ma trận State (Column-major order)
+    // Chuyển vào state
     for (int i = 0; i < 16; i++) {
         state[i % 4][i / 4] = ciphertext[i];
     }
 
-    // 4. Thực hiện giải mã 
-    // Đảm bảo trong structures.h bạn đã định nghĩa hàm này
+    // Gọi hàm giải mã (Hàm này đã được thêm vào structures.h ở Bước 1)
     AES_decrypt(state, key);
 
-    // 5. Xuất kết quả theo định dạng chuẩn của Lab 5
+    // In kết quả theo đúng format bài Lab yêu cầu
     cout << "=============================" << endl;
     cout << "Công cụ giải mã AES 128-bit " << endl;
     cout << "=============================" << endl;
     cout << "Đọc tin nhắn được mã hóa từ message.aes" << endl;
     cout << "Đọc khóa 128 bit từ tệp khóa." << endl;
-    
-    // Lưu ý: Cần in thông tin hex nếu script test yêu cầu (tùy chọn)
-    
     cout << "Tin nhắn đã được giải mã: " << endl;
-    cout << "\t"; // Tab này rất quan trọng để khớp với script diff
+    cout << "\t"; 
     for (int i = 0; i < 16; i++) {
         unsigned char c = state[i % 4][i / 4];
-        if (c != 0) { // Loại bỏ Zero Padding
-            cout << (char)c;
-        }
+        if (c != 0) cout << (char)c;
     }
     cout << endl;
 

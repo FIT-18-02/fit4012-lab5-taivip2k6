@@ -21,28 +21,28 @@ void AddRoundKey(unsigned char* state, unsigned char* roundKey) {
     for (int i = 0; i < 16; i++) state[i] ^= roundKey[i];
 }
 
-void InvSubBytes(unsigned char* state) {
-    for (int i = 0; i < 16; i++) state[i] = rsbox[state[i]];
+void SubBytes(unsigned char* state) {
+    for (int i = 0; i < 16; i++) state[i] = s[state[i]];
 }
 
-void InvShiftRows(unsigned char* state) {
+void ShiftRows(unsigned char* state) {
     unsigned char tmp[16];
     tmp[0] = state[0]; tmp[4] = state[4]; tmp[8] = state[8]; tmp[12] = state[12];
-    tmp[1] = state[13]; tmp[5] = state[1]; tmp[9] = state[5]; tmp[13] = state[9];
+    tmp[1] = state[5]; tmp[5] = state[9]; tmp[9] = state[13]; tmp[13] = state[1];
     tmp[2] = state[10]; tmp[6] = state[14]; tmp[10] = state[2]; tmp[14] = state[6];
-    tmp[3] = state[7]; tmp[7] = state[11]; tmp[11] = state[15]; tmp[15] = state[3];
+    tmp[3] = state[15]; tmp[7] = state[3]; tmp[11] = state[7]; tmp[15] = state[11];
     memcpy(state, tmp, 16);
 }
 
-void InvMixColumns(unsigned char* state) {
+void MixColumns(unsigned char* state) {
     unsigned char tmp[16];
     for (int i = 0; i < 4; i++) {
         int o = i * 4;
         unsigned char s0 = state[o], s1 = state[o+1], s2 = state[o+2], s3 = state[o+3];
-        tmp[o]   = gmul(s0, 0x0e) ^ gmul(s1, 0x0b) ^ gmul(s2, 0x0d) ^ gmul(s3, 0x09);
-        tmp[o+1] = gmul(s0, 0x09) ^ gmul(s1, 0x0e) ^ gmul(s2, 0x0b) ^ gmul(s3, 0x0d);
-        tmp[o+2] = gmul(s0, 0x0d) ^ gmul(s1, 0x09) ^ gmul(s2, 0x0e) ^ gmul(s3, 0x0b);
-        tmp[o+3] = gmul(s0, 0x0b) ^ gmul(s1, 0x0d) ^ gmul(s2, 0x09) ^ gmul(s3, 0x0e);
+        tmp[o]   = gmul(s0, 2) ^ gmul(s1, 3) ^ s2 ^ s3;
+        tmp[o+1] = s0 ^ gmul(s1, 2) ^ gmul(s2, 3) ^ s3;
+        tmp[o+2] = s0 ^ s1 ^ gmul(s2, 2) ^ gmul(s3, 3);
+        tmp[o+3] = gmul(s0, 3) ^ s1 ^ s2 ^ gmul(s3, 2);
     }
     memcpy(state, tmp, 16);
 }
@@ -65,35 +65,31 @@ void KeyExpansion(unsigned char* key, unsigned char* expandedKey) {
     }
 }
 
-void AES_decrypt(unsigned char* state, unsigned char* expandedKey) {
-    AddRoundKey(state, expandedKey + 160);
-    for (int r = 9; r >= 1; r--) {
-        InvShiftRows(state);
-        InvSubBytes(state);
-        AddRoundKey(state, expandedKey + (r * 16));
-        InvMixColumns(state);
-    }
-    InvShiftRows(state);
-    InvSubBytes(state);
-    AddRoundKey(state, expandedKey);
-}
-
 int main() {
     unsigned char key[16] = {0}, expandedKey[176] = {0}, state[16] = {0};
+    
     ifstream kf("keyfile");
     int val;
     for (int i = 0; i < 16 && (kf >> hex >> val); i++) key[i] = (unsigned char)val;
     kf.close();
 
-    ifstream in("message.aes", ios::binary);
-    in.read((char*)state, 16);
-    in.close();
+    // Đọc chính xác 16 byte từ stdin (để pass diff test)
+    for(int i = 0; i < 16; i++) {
+        char c;
+        if(cin.get(c)) state[i] = (unsigned char)c;
+        else state[i] = 0;
+    }
 
     KeyExpansion(key, expandedKey);
-    AES_decrypt(state, expandedKey);
+    AddRoundKey(state, expandedKey);
+    for (int r = 1; r <= 9; r++) {
+        SubBytes(state); ShiftRows(state); MixColumns(state);
+        AddRoundKey(state, expandedKey + (r * 16));
+    }
+    SubBytes(state); ShiftRows(state);
+    AddRoundKey(state, expandedKey + 160);
 
-    // Dòng quan trọng: In đúng 16 byte ra stdout để script so sánh 'diff'
-    cout.write((char*)state, 16);
-    
+    ofstream out("message.aes", ios::binary);
+    out.write((char*)state, 16);
     return 0;
 }

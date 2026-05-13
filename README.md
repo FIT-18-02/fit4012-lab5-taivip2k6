@@ -35,3 +35,17 @@
 ├── keyfile
 ├── report-1page.md
 └── structures.h
+## 3. Input / Đầu vào
+
+Chương trình nhận plaintext từ bàn phím bằng `cin.getline(...)`.
+
+File `encrypt.cpp` nhận dữ liệu người dùng nhập và thực hiện mã hóa AES-128.
+
+File `decrypt.cpp` đọc ciphertext từ file `message.aes` để giải mã.
+
+Cả hai chương trình sử dụng khóa AES-128 đọc từ file `keyfile`.
+
+Ví dụ nội dung `keyfile`:
+
+```text
+01 04 02 03 01 03 04 0A 09 0B 07 0F 0F 06 03 00

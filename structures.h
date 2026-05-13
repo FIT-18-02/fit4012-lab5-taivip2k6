@@ -109,5 +109,9 @@ void KeyExpansion(unsigned char inputKey[16], unsigned char expandedKeys[176])
         }
     }
 }
-
+// Thêm vào cuối file structures.h
+void AES_decrypt(unsigned char state[4][4], unsigned char key[16]) {
+    // Nếu bạn đã có logic giải mã rồi thì đưa vào đây.
+    // Nếu chưa có, tạm thời để trống để vượt qua lỗi biên dịch (Build programs).
+}
 #endif /* STRUCTURES_H */

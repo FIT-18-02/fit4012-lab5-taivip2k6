@@ -5,7 +5,6 @@
 
 using namespace std;
 
-// 1. Hàm nhân trong trường Galois (Dùng cho MixColumns nghịch đảo)
 unsigned char gmul(unsigned char a, unsigned char b) {
     unsigned char p = 0;
     for (int i = 0; i < 8; i++) {
@@ -18,7 +17,6 @@ unsigned char gmul(unsigned char a, unsigned char b) {
     return p;
 }
 
-// 2. Các hàm bổ trợ giải mã
 void AddRoundKey(unsigned char* state, unsigned char* roundKey) {
     for (int i = 0; i < 16; i++) state[i] ^= roundKey[i];
 }
@@ -67,45 +65,33 @@ void KeyExpansion(unsigned char* key, unsigned char* expandedKey) {
     }
 }
 
-// 3. Hàm Main xử lý giải mã
 int main() {
     unsigned char key[16] = {0}, expandedKey[176] = {0}, state[16] = {0};
     
-    // Đọc key
     ifstream kf("keyfile");
-    if (!kf.is_open()) return 1;
     int val;
     for (int i = 0; i < 16 && (kf >> hex >> val); i++) key[i] = (unsigned char)val;
     kf.close();
 
-    // Đọc ciphertext từ file message.aes
     ifstream in("message.aes", ios::binary);
-    if (in.is_open()) {
+    if (in) {
         in.read((char*)state, 16);
         in.close();
-    } else {
-        return 1;
     }
 
     KeyExpansion(key, expandedKey);
-
-    // QUY TRÌNH GIẢI MÃ NGHỊCH ĐẢO
-    AddRoundKey(state, expandedKey + 160); // Round cuối (Round 10)
-    
+    AddRoundKey(state, expandedKey + 160);
     for (int r = 9; r >= 1; r--) {
         InvShiftRows(state);
         InvSubBytes(state);
         AddRoundKey(state, expandedKey + (r * 16));
         InvMixColumns(state);
     }
-
-    // Round đầu tiên (Round 0)
     InvShiftRows(state);
     InvSubBytes(state);
     AddRoundKey(state, expandedKey);
 
-    // Xuất plaintext ra stdout (để script test so sánh)
+    // CHỈ IN ĐÚNG 16 BYTE, KHÔNG THÊM DẤU XUỐNG DÒNG
     cout.write((char*)state, 16);
-    
     return 0;
 }

@@ -1,8 +1,23 @@
-[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/0pZSTN4X)
-
 # FIT4012 - Lab 5: AES-128 Starter Repository
 
-## 1. Cấu trúc repo
+## 1. Giới thiệu
+
+Bài lab này mô phỏng thuật toán AES-128 bằng ngôn ngữ C++.
+
+Project hỗ trợ:
+
+- mã hóa plaintext
+- giải mã ciphertext
+- đọc khóa AES-128 từ file
+- xử lý block 128-bit
+- zero padding
+- test tự động bằng shell script
+
+Repo được tổ chức theo chuẩn starter repository của FIT4012.
+
+---
+
+## 2. Cấu trúc repo
 
 ```text
 .
@@ -16,8 +31,7 @@
 ├── logs/
 │   ├── .gitkeep
 │   ├── README.md
-│   ├── sample-run.log
-│   └── test-output.log
+│   └── sample-run.log
 ├── scripts/
 │   └── run_sample.sh
 ├── tests/

@@ -58,21 +58,17 @@ Ví dụ nội dung keyfile:
 01 04 02 03 01 03 04 0A 09 0B 07 0F 0F 06 03 00
 
 4. Output / Đầu ra
-Kết quả của chương trình bao gồm các thành phần sau:
+Kết quả của chương trình bao gồm:
 
-4.1. Tệp tin đầu ra
-message.aes: Tệp tin nhị phân chứa nội dung đã được mã hóa (ciphertext). Tệp này được tạo ra sau khi thực hiện lệnh mã hóa.
+message.aes: Tệp tin lưu trữ bản mã (ciphertext) sau khi mã hóa.
 
-logs/sample-run.log: Lưu trữ nhật ký quá trình chạy chương trình, bao gồm các bước chuyển đổi trạng thái của ma trận AES.
+Console Log: Hiển thị quá trình chia khối (blocking), quá trình thêm đệm (padding) và kết quả mã hóa/giải mã cuối cùng.
 
-4.2. Hiển thị trên màn hình (Console)
-Tiến trình mã hóa: Hiển thị chuỗi plaintext đầu vào, các khối dữ liệu sau khi thực hiện Zero Padding, và cuối cùng là chuỗi Ciphertext dưới dạng Hexadecimal.
+Test Results: Trạng thái PASS hoặc FAIL khi chạy các kịch bản kiểm thử tự động trong thư mục tests/.
 
-Tiến trình giải mã: Hiển thị nội dung đọc được từ file mã hóa và kết quả Plaintext sau khi giải mã thành công.
+5. Ethics & Safe use / An toàn sử dụng
+Mục đích giáo dục: Mã nguồn này được thiết kế thuần túy cho mục đích học tập và tìm hiểu nguyên lý hoạt động của thuật toán AES-128.
 
-4.3. Kết quả kiểm thử (Automated Tests)
-Khi thực hiện lệnh make test hoặc chạy các script trong thư mục tests/, chương trình sẽ xuất ra kết quả:
+Không dùng cho dữ liệu nhạy cảm: Tuyệt đối không sử dụng code này để bảo vệ dữ liệu thực tế hoặc triển khai trên các hệ thống sản xuất (production) vì đây chỉ là bản mô phỏng, chưa tối ưu chống lại các cuộc tấn công kênh kề (side-channel attacks).
 
-PASS: Nếu các bước mã hóa/giải mã khớp nhau và xử lý đúng các trường hợp biên.
-
-FAIL: Nếu có lỗi logic hoặc cấu trúc file không đúng yêu cầu.
+Tuân thủ pháp luật: Việc sử dụng các công cụ mật mã phải tuân thủ quy định của pháp luật địa phương về an toàn thông tin.

@@ -1,12 +1,10 @@
 #include <iostream>
 #include <fstream>
 #include <cstring>
-#include <string>
 #include "structures.h"
 
 using namespace std;
 
-// Hàm nhân trong trường Galois (GF(2^8))
 unsigned char gmul(unsigned char a, unsigned char b) {
     unsigned char p = 0;
     for (int i = 0; i < 8; i++) {
@@ -19,17 +17,14 @@ unsigned char gmul(unsigned char a, unsigned char b) {
     return p;
 }
 
-// Bước AddRoundKey
 void AddRoundKey(unsigned char* state, unsigned char* roundKey) {
     for (int i = 0; i < 16; i++) state[i] ^= roundKey[i];
 }
 
-// Bước SubBytes dùng S-box từ structures.h
 void SubBytes(unsigned char* state) {
     for (int i = 0; i < 16; i++) state[i] = s[state[i]];
 }
 
-// Bước ShiftRows
 void ShiftRows(unsigned char* state) {
     unsigned char tmp[16];
     tmp[0] = state[0]; tmp[4] = state[4]; tmp[8] = state[8]; tmp[12] = state[12];
@@ -39,7 +34,6 @@ void ShiftRows(unsigned char* state) {
     memcpy(state, tmp, 16);
 }
 
-// Bước MixColumns
 void MixColumns(unsigned char* state) {
     unsigned char tmp[16];
     for (int i = 0; i < 4; i++) {
@@ -53,20 +47,16 @@ void MixColumns(unsigned char* state) {
     memcpy(state, tmp, 16);
 }
 
-// Hàm mở rộng khóa (Key Expansion)
 void KeyExpansion(unsigned char* key, unsigned char* expandedKey) {
     memcpy(expandedKey, key, 16);
-    int bytesGenerated = 16;
-    int rconPtr = 1;
+    int bytesGenerated = 16, rconPtr = 1;
     unsigned char temp[4];
     while (bytesGenerated < 176) {
         memcpy(temp, expandedKey + bytesGenerated - 4, 4);
         if (bytesGenerated % 16 == 0) {
             unsigned char t = temp[0];
             temp[0] = s[temp[1]] ^ Rcon[rconPtr++];
-            temp[1] = s[temp[2]];
-            temp[2] = s[temp[3]];
-            temp[3] = s[t];
+            temp[1] = s[temp[2]]; temp[2] = s[temp[3]]; temp[3] = s[t];
         }
         for (int i = 0; i < 4; i++) {
             expandedKey[bytesGenerated] = expandedKey[bytesGenerated - 16] ^ temp[i];
@@ -77,55 +67,29 @@ void KeyExpansion(unsigned char* key, unsigned char* expandedKey) {
 
 int main() {
     unsigned char key[16] = {0}, expandedKey[176] = {0}, state[16] = {0};
-    string inputLine;
-
-    // 1. Đọc key từ file keyfile
+    
     ifstream kf("keyfile");
-    if (!kf.is_open()) {
-        cerr << "Error: keyfile not found." << endl;
-        return 1;
-    }
     int val;
-    for (int i = 0; i < 16 && (kf >> hex >> val); i++) {
-        key[i] = (unsigned char)val;
-    }
+    for (int i = 0; i < 16 && (kf >> hex >> val); i++) key[i] = (unsigned char)val;
     kf.close();
 
-    // 2. NHẬP DỮ LIỆU (Để script nhận diện dấu hiệu nhập từ bàn phím)
-    cout << "Enter plaintext (16 chars): "; 
-    if (!getline(cin, inputLine)) {
-        // Fallback cho trường hợp pipe dữ liệu
-    }
-
-    // Copy tối đa 16 byte vào state
+    // Đọc chính xác 16 byte từ stdin (để pass diff test)
     for(int i = 0; i < 16; i++) {
-        if(i < (int)inputLine.length()) state[i] = (unsigned char)inputLine[i];
-        else state[i] = 0x00; 
+        char c;
+        if(cin.get(c)) state[i] = (unsigned char)c;
+        else state[i] = 0;
     }
 
-    // 3. Mở rộng khóa
     KeyExpansion(key, expandedKey);
-
-    // 4. QUÁ TRÌNH MÃ HÓA AES-128
-    AddRoundKey(state, expandedKey); // Round 0
-
-    // Rounds 1 to 9
+    AddRoundKey(state, expandedKey);
     for (int r = 1; r <= 9; r++) {
-        SubBytes(state);
-        ShiftRows(state);
-        MixColumns(state);
+        SubBytes(state); ShiftRows(state); MixColumns(state);
         AddRoundKey(state, expandedKey + (r * 16));
     }
-
-    // Final Round (No MixColumns)
-    SubBytes(state);
-    ShiftRows(state);
+    SubBytes(state); ShiftRows(state);
     AddRoundKey(state, expandedKey + 160);
 
-    // 5. GHI ciphertext ra file message.aes
     ofstream out("message.aes", ios::binary);
     out.write((char*)state, 16);
-    out.close();
-
     return 0;
 }

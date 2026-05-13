@@ -2,11 +2,9 @@
 #define STRUCTURES_H
 
 #include <iostream>
-#include <iomanip>
 
-// --- 1. CÁC BẢNG TRA CỨU (LOOKUP TABLES) ---
-
-const unsigned char sbox[256] = {
+// --- Bảng S-box (tên là 's' để khớp với encrypt.cpp) ---
+const unsigned char s[256] = {
     0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76,
     0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59, 0x47, 0xf0, 0xad, 0xd4, 0xa2, 0xaf, 0x9c, 0xa4, 0x72, 0xc0,
     0xb7, 0xfd, 0x93, 0x26, 0x36, 0x3f, 0xf7, 0xcc, 0x34, 0xa5, 0xe5, 0xf1, 0x71, 0xd8, 0x31, 0x15,
@@ -18,13 +16,14 @@ const unsigned char sbox[256] = {
     0xcd, 0x0c, 0x13, 0xec, 0x5f, 0x97, 0x44, 0x17, 0xc4, 0xa7, 0x7e, 0x3d, 0x64, 0x5d, 0x19, 0x73,
     0x60, 0x81, 0x4f, 0xdc, 0x22, 0x2a, 0x90, 0x88, 0x46, 0xee, 0xb8, 0x14, 0xde, 0x5e, 0x0b, 0xdb,
     0xe0, 0x32, 0x3a, 0x0a, 0x49, 0x06, 0x24, 0x5c, 0xc2, 0xd3, 0xac, 0x62, 0x91, 0x95, 0xe4, 0x79,
-    0xe7, 0xc8, 0x37, 0x6d, 0x8d, d5, 0x4e, 0xa9, 0x6c, 0x56, 0xf4, 0xea, 0x65, 0x7a, 0xae, 0x08,
+    0xe7, 0xc8, 0x37, 0x6d, 0x8d, 0xd5, 0x4e, 0xa9, 0x6c, 0x56, 0xf4, 0xea, 0x65, 0x7a, 0xae, 0x08,
     0xba, 0x78, 0x25, 0x2e, 0x1c, 0xa6, 0xb4, 0xc6, 0xe8, 0xdd, 0x74, 0x1f, 0x4b, 0xbd, 0x8b, 0x8a,
     0x70, 0x3e, 0xb5, 0x66, 0x48, 0x03, 0xf6, 0x0e, 0x61, 0x35, 0x57, 0xb9, 0x86, 0xc1, 0x1d, 0x9e,
     0xe1, 0xf8, 0x98, 0x11, 0x69, 0xd9, 0x8e, 0x94, 0x9b, 0x1e, 0x87, 0xe9, 0xce, 0x55, 0x28, 0xdf,
     0x8c, 0xa1, 0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68, 0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16
 };
 
+// --- Bảng Inverse S-box ---
 const unsigned char rsbox[256] = {
     0x52, 0x09, 0x6a, 0xd5, 0x30, 0x36, 0xa5, 0x38, 0xbf, 0x40, 0xa3, 0x9e, 0x81, 0xf3, 0xd7, 0xfb,
     0x7c, 0xe3, 0x39, 0x82, 0x9b, 0x2f, 0xff, 0x87, 0x34, 0x8e, 0x43, 0x44, 0xc4, 0xde, 0xe9, 0xcb,
@@ -46,14 +45,28 @@ const unsigned char rsbox[256] = {
 
 const unsigned char Rcon[11] = { 0x00, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36 };
 
-// --- 2. CÁC HÀM TIỆN ÍCH BIẾN ĐỔI ---
-
-void AddRoundKey(unsigned char state[4][4], unsigned char* roundKey) {
-    for (int i = 0; i < 4; i++) {
-        for (int j = 0; j < 4; j++) {
-            state[j][i] ^= roundKey[i * 4 + j];
-        }
+// --- Phép nhân Galois (Bổ trợ) ---
+unsigned char gm(unsigned char a, unsigned char b) {
+    unsigned char p = 0;
+    for (int i = 0; i < 8; i++) {
+        if (b & 1) p ^= a;
+        bool hi = (a & 0x80);
+        a <<= 1;
+        if (hi) a ^= 0x1b;
+        b >>= 1;
     }
+    return p;
+}
+
+// Định nghĩa hàm để encrypt.cpp dùng được
+unsigned char mul2(unsigned char a) { return gm(a, 0x02); }
+unsigned char mul3(unsigned char a) { return gm(a, 0x03); }
+
+// --- Các hàm biến đổi ---
+void AddRoundKey(unsigned char state[4][4], unsigned char* rk) {
+    for (int i = 0; i < 4; i++)
+        for (int j = 0; j < 4; j++)
+            state[j][i] ^= rk[i * 4 + j];
 }
 
 void InvSubBytes(unsigned char state[4][4]) {
@@ -63,83 +76,54 @@ void InvSubBytes(unsigned char state[4][4]) {
 }
 
 void InvShiftRows(unsigned char state[4][4]) {
-    unsigned char temp;
-    // Row 1: Shift right 1
-    temp = state[1][3]; state[1][3] = state[1][2]; state[1][2] = state[1][1]; state[1][1] = state[1][0]; state[1][0] = temp;
-    // Row 2: Shift right 2
-    temp = state[2][0]; state[2][0] = state[2][2]; state[2][2] = temp;
-    temp = state[2][1]; state[2][1] = state[2][3]; state[2][3] = temp;
-    // Row 3: Shift right 3 (tương đương shift left 1)
-    temp = state[3][0]; state[3][0] = state[3][1]; state[3][1] = state[3][2]; state[3][2] = state[3][3]; state[3][3] = temp;
-}
-
-unsigned char galois_mul(unsigned char a, unsigned char b) {
-    unsigned char p = 0;
-    for (int i = 0; i < 8; i++) {
-        if (b & 1) p ^= a;
-        bool hi_bit_set = (a & 0x80);
-        a <<= 1;
-        if (hi_bit_set) a ^= 0x1b;
-        b >>= 1;
-    }
-    return p;
+    unsigned char t;
+    t = state[1][3]; state[1][3] = state[1][2]; state[1][2] = state[1][1]; state[1][1] = state[1][0]; state[1][0] = t;
+    t = state[2][0]; state[2][0] = state[2][2]; state[2][2] = t;
+    t = state[2][1]; state[2][1] = state[2][3]; state[2][3] = t;
+    t = state[3][0]; state[3][0] = state[3][1]; state[3][1] = state[3][2]; state[3][2] = state[3][3]; state[3][3] = t;
 }
 
 void InvMixColumns(unsigned char state[4][4]) {
     unsigned char tmp[4];
     for (int i = 0; i < 4; i++) {
-        tmp[0] = galois_mul(state[0][i], 0x0e) ^ galois_mul(state[1][i], 0x0b) ^ galois_mul(state[2][i], 0x0d) ^ galois_mul(state[3][i], 0x09);
-        tmp[1] = galois_mul(state[0][i], 0x09) ^ galois_mul(state[1][i], 0x0e) ^ galois_mul(state[2][i], 0x0b) ^ galois_mul(state[3][i], 0x0d);
-        tmp[2] = galois_mul(state[0][i], 0x0d) ^ galois_mul(state[1][i], 0x09) ^ galois_mul(state[2][i], 0x0e) ^ galois_mul(state[3][i], 0x0b);
-        tmp[3] = galois_mul(state[0][i], 0x0b) ^ galois_mul(state[1][i], 0x0d) ^ galois_mul(state[2][i], 0x09) ^ galois_mul(state[3][i], 0x0e);
+        tmp[0] = gm(state[0][i], 0x0e) ^ gm(state[1][i], 0x0b) ^ gm(state[2][i], 0x0d) ^ gm(state[3][i], 0x09);
+        tmp[1] = gm(state[0][i], 0x09) ^ gm(state[1][i], 0x0e) ^ gm(state[2][i], 0x0b) ^ gm(state[3][i], 0x0d);
+        tmp[2] = gm(state[0][i], 0x0d) ^ gm(state[1][i], 0x09) ^ gm(state[2][i], 0x0e) ^ gm(state[3][i], 0x0b);
+        tmp[3] = gm(state[0][i], 0x0b) ^ gm(state[1][i], 0x0d) ^ gm(state[2][i], 0x09) ^ gm(state[3][i], 0x0e);
         for (int j = 0; j < 4; j++) state[j][i] = tmp[j];
     }
 }
 
-void KeyExpansion(unsigned char* key, unsigned char* roundKeys) {
-    for (int i = 0; i < 16; i++) roundKeys[i] = key[i];
-    int bytesGenerated = 16;
-    int rconPtr = 1;
-    unsigned char temp[4];
-
-    while (bytesGenerated < 176) {
-        for (int i = 0; i < 4; i++) temp[i] = roundKeys[bytesGenerated - 4 + i];
-        if (bytesGenerated % 16 == 0) {
-            unsigned char t = temp[0];
-            temp[0] = sbox[temp[1]] ^ Rcon[rconPtr++];
-            temp[1] = sbox[temp[2]];
-            temp[2] = sbox[temp[3]];
-            temp[3] = sbox[t];
+void KeyExpansion(unsigned char* k, unsigned char* rks) {
+    for (int i = 0; i < 16; i++) rks[i] = k[i];
+    int bGen = 16, rPtr = 1;
+    unsigned char tmp[4];
+    while (bGen < 176) {
+        for (int i = 0; i < 4; i++) tmp[i] = rks[bGen - 4 + i];
+        if (bGen % 16 == 0) {
+            unsigned char v = tmp[0];
+            tmp[0] = s[tmp[1]] ^ Rcon[rPtr++];
+            tmp[1] = s[tmp[2]];
+            tmp[2] = s[tmp[3]];
+            tmp[3] = s[v];
         }
-        for (int i = 0; i < 4; i++) {
-            roundKeys[bytesGenerated] = roundKeys[bytesGenerated - 16] ^ temp[i];
-            bytesGenerated++;
-        }
+        for (int i = 0; i < 4; i++) { rks[bGen] = rks[bGen - 16] ^ tmp[i]; bGen++; }
     }
 }
 
-// --- 3. HÀM GIẢI MÃ CHÍNH (AES_DECRYPT) ---
-// Phải nằm dưới cùng để gọi được các hàm trên
-
 void AES_decrypt(unsigned char state[4][4], unsigned char key[16]) {
-    unsigned char roundKeys[176];
-    KeyExpansion(key, roundKeys);
-
-    // Initial Round
-    AddRoundKey(state, roundKeys + 160);
-
-    // 9 Rounds
-    for (int round = 9; round >= 1; round--) {
+    unsigned char rks[176];
+    KeyExpansion(key, rks);
+    AddRoundKey(state, rks + 160);
+    for (int r = 9; r >= 1; r--) {
         InvShiftRows(state);
         InvSubBytes(state);
-        AddRoundKey(state, roundKeys + round * 16);
+        AddRoundKey(state, rks + r * 16);
         InvMixColumns(state);
     }
-
-    // Final Round
     InvShiftRows(state);
     InvSubBytes(state);
-    AddRoundKey(state, roundKeys);
+    AddRoundKey(state, rks);
 }
 
 #endif

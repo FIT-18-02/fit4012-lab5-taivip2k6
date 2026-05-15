@@ -5,7 +5,7 @@
 Bài thực hành giúp sinh viên hiểu cơ chế hoạt động cơ bản của AES-128, bao gồm mã hóa và giải mã dữ liệu theo block 128-bit, mở rộng khóa (Key Expansion), các vòng xử lý AES và cơ chế padding dữ liệu.
 
 ## Cách làm / Method
-
+ 
 Chương trình được xây dựng bằng ngôn ngữ C++ với 3 file chính:
 
 - `encrypt.cpp`: thực hiện mã hóa plaintext thành ciphertext.
